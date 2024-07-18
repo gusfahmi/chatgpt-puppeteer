@@ -31,7 +31,7 @@ const btnContinue = "#root > div > main > section > div.login-container > button
 const passSelector = "#password";
 const btnContinuePass = "button[data-action-button-primary=true]";
 
-const profilePicSelector = "button[data-testid=fruit-juice-profile]";
+const profilePicSelector = "img[alt=User]";
 
 function sleep(time) {
     return new Promise(resolve=>setTimeout(resolve, time));
@@ -58,7 +58,7 @@ class ChatGPT extends EventEmitter{
             if(process.platform == "linux"){
                 browser = await puppeteer.launch({
                     userDataDir: `./data/${this.email}`,
-                    headless: true,
+                    headless: false,
                     executablePath: "/usr/bin/google-chrome",
                     args: [
                         "--no-sandbox"
@@ -67,7 +67,7 @@ class ChatGPT extends EventEmitter{
             }else{
                 browser = await puppeteer.launch({
                     userDataDir: `./data/${this.email}`,
-                    headless: true,
+                    headless: false,
                     args: [
                         "--no-sandbox"
                     ],
@@ -136,9 +136,10 @@ class ChatGPT extends EventEmitter{
 
             await sleep(1000);
 
-            const btnSelector = "button[data-testid=fruitjuice-stop-button]" 
-            await page.waitForSelector(btnSelector, {hidden: true, timeout: 0});
-    
+            
+            const pageSelectorStreaming = "form > div > div.flex.w-full.items-center > div > div > button > svg > rect" 
+            await page.waitForSelector(pageSelectorStreaming, {hidden: true, timeout: 0});
+        
             const textChat = await page.$$(selector);
             const getText = textChat[textChat.length - 1]; 
             const textResponse = await getText?.evaluate(el => el.innerHTML);  
