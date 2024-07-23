@@ -7,6 +7,9 @@ ai.on('ready', async () => {
     const response = await ai.ask("How are you today?");
     console.log(response)
 
+    const getSounds = await ai.getSound();
+    console.log(getSounds);
+
 })
 
 ai.on('error', (err) => {

@@ -1,4 +1,4 @@
-const os = require('os')
+
 const puppeteer = require('puppeteer-extra');
 // Add stealth plugin and use defaults (all tricks to hide puppeteer usage)
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
@@ -8,14 +8,23 @@ puppeteer.use(StealthPlugin())
 const { convert } = require('html-to-text');
 const options = {
     wordwrap: 130,
+    selectors: [{
+        selector: 'hr', format: 'skip'
+    }]
 };
 
 
 const EventEmitter = require('node:events'); 
 const randomUseragent = require('random-useragent');
 
+const {sleep, splitter} = require('./libs') 
+
+const LanguageDetect = require('languagedetect');
+const lngDetector = new LanguageDetect();
 
 
+
+//element selectors
 const welcomePopupSelector = "div > div > p.mb-1.text-center.text-2xl.font-semibold";
 const stayLogoutSelector = "div > div > a";
 
@@ -32,15 +41,12 @@ const passSelector = "#password";
 const btnContinuePass = "button[data-action-button-primary=true]";
 
 const profilePicSelector = "img[alt=User]";
-
-function sleep(time) {
-    return new Promise(resolve=>setTimeout(resolve, time));
-}
-
+ 
  
 class ChatGPT extends EventEmitter{
 
     #page;
+    #responseText;
 
     constructor(email, password){
         super();
@@ -129,7 +135,7 @@ class ChatGPT extends EventEmitter{
             const page = this.#page; 
 
             await page.waitForSelector(inputAsk); 
-            await page.type(inputAsk, text, {delay: 150});
+            await page.type(inputAsk, text, {delay: 130});
             await sleep(900);
 
             await page.keyboard.press('Enter')
@@ -143,13 +149,90 @@ class ChatGPT extends EventEmitter{
             const textChat = await page.$$(selector);
             const getText = textChat[textChat.length - 1]; 
             const textResponse = await getText?.evaluate(el => el.innerHTML);  
-            return convert(textResponse, options);
+            const convertText =  convert(textResponse, options);
+            this.#responseText = convertText;
+            return convertText
 
         }catch(e){
             return "Can not generate response right now, Err : " + e.message
         }
         
  
+
+    }
+
+
+    async getSound(){
+        try{
+
+            const resText = this.#responseText
+            if(resText == null || resText == ""){
+                return "Text can not be empty!"
+            }else{
+
+                let arrText = []
+                let audios = [];
+
+
+                if(resText.trim().length > 600){
+
+                    const texts = splitter(resText, 600);
+                    arrText = texts
+
+                }else{
+                    arrText.push(resText)
+                }
+
+ 
+
+                for await (let text of arrText){
+
+                    const dLang = lngDetector.detect(text, 1)
+                    const getLang = dLang[0][0];
+
+                    const lang = getLang == "english" ? 'English' : 'Indonesian'
+                    const sound = getLang == "english" ? 'en-US-ChristopherNeural' : 'id-ID-ArdiNeural'
+
+                    const fSound = await fetch("https://crikk.com/app/generate-audio", {
+                      "headers": {
+                        "accept": "application/json, text/javascript, */*; q=0.01",
+                        "accept-language": "en-US,en;q=0.9,id;q=0.8",
+                        "cache-control": "no-cache",
+                        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                        "pragma": "no-cache",
+                        "priority": "u=1, i",
+                        "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"",
+                        "sec-ch-ua-mobile": "?0",
+                        "sec-ch-ua-platform": "\"Windows\"",
+                        "sec-fetch-dest": "empty",
+                        "sec-fetch-mode": "cors",
+                        "sec-fetch-site": "same-origin",
+                        "x-requested-with": "XMLHttpRequest"
+                      },
+                      "referrer": "https://crikk.com/text-to-speech/indonesian/",
+                      "referrerPolicy": "strict-origin-when-cross-origin",
+                      "body": `languages=${lang}&voice=${sound}&text=${text}`,
+                      "method": "POST",
+                      "mode": "cors",
+                      "credentials": "include"
+                    })
+    
+                    const response = await fSound.json();
+                    audios.push(response)
+
+
+                }
+
+                return audios;
+                 
+
+            }           
+
+        }catch(e){
+            return "Can not generate sound right now, Err : " + e.message 
+        }
+
+        
 
     }
  
