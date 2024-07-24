@@ -48,10 +48,11 @@ class ChatGPT extends EventEmitter{
     #page;
     #responseText;
 
-    constructor(email, password){
+    constructor(email, password, headless=true){
         super();
         this.email = email;
         this.password = password;
+        this.headless = headless;
         this.#setup();
     }
 
@@ -64,7 +65,7 @@ class ChatGPT extends EventEmitter{
             if(process.platform == "linux"){
                 browser = await puppeteer.launch({
                     userDataDir: `./data/${this.email}`,
-                    headless: false,
+                    headless: this.headless,
                     executablePath: "/usr/bin/google-chrome",
                     args: [
                         "--no-sandbox"
@@ -73,7 +74,7 @@ class ChatGPT extends EventEmitter{
             }else{
                 browser = await puppeteer.launch({
                     userDataDir: `./data/${this.email}`,
-                    headless: false,
+                    headless: this.headless,
                     args: [
                         "--no-sandbox"
                     ],
