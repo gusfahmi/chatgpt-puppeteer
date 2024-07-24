@@ -1,6 +1,6 @@
 {
-  "name": "instagram-downloaded",
-  "version": "1.0.0",
+  "name": "chatgpt-puppeteer",
+  "version": "0.1",
   "description": "",
   "main": "app.js",
   "scripts": {
